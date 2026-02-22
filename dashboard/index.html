@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Inventory/Order Services Dashboard</title>
+  <style>
+    body{font-family:Segoe UI,Arial;margin:24px}
+    .service{border:1px solid #ddd;padding:12px;border-radius:6px;margin-bottom:12px}
+    .ok{color:green}
+    .down{color:crimson}
+  </style>
+</head>
+<body>
+  <h1>Services Dashboard</h1>
+  <div class="service" id="inventory">
+    <h2>Inventory Service</h2>
+    <pre id="inv-json">loading…</pre>
+  </div>
+
+  <div class="service" id="order">
+    <h2>Order Service</h2>
+    <pre id="ord-json">loading…</pre>
+  </div>
+
+  <script>
+    const invEl = document.getElementById('inv-json');
+    const ordEl = document.getElementById('ord-json');
+
+    async function fetchJson(url){
+      try{
+        const res = await fetch(url);
+        const json = await res.json();
+        return {ok:true,json};
+      }catch(e){
+        return {ok:false,error:e.message};
+      }
+    }
+
+    async function refresh(){
+      const inv = await fetchJson('http://localhost:4001/health');
+      if(inv.ok){
+        invEl.textContent = JSON.stringify(inv.json,null,2);
+        invEl.className = 'ok';
+      } else {
+        invEl.textContent = inv.error;
+        invEl.className = 'down';
+      }
+
+      const ord = await fetchJson('http://localhost:4000/health');
+      if(ord.ok){
+        ordEl.textContent = JSON.stringify(ord.json,null,2);
+        ordEl.className = 'ok';
+      } else {
+        ordEl.textContent = ord.error;
+        ordEl.className = 'down';
+      }
+    }
+
+    refresh();
+    setInterval(refresh,5000);
+  </script>
+</body>
+</html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Inventory Platform — Dashboard</title>
+    <style>
+      body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial;margin:24px}
+      .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:900px}
+      .card{padding:16px;border:1px solid #e3e3e3;border-radius:8px}
+      .name{font-weight:700;margin-bottom:8px}
+      .ok{color:green}
+      .bad{color:#c0392b}
+      .ts{font-size:12px;color:#666;margin-top:8px}
+      pre{background:#f8f8f8;padding:8px;border-radius:6px;overflow:auto}
+    </style>
+  </head>
+  <body>
+    <h1>Inventory Platform — Dashboard</h1>
+    <p>Polling services every 3s. Open this page in your browser.</p>
+
+    <div class="grid">
+      <div class="card" id="order">
+        <div class="name">Order Service</div>
+        <div>Status: <span class="status">—</span></div>
+        <div class="ts">Last: <span class="last">—</span></div>
+        <pre class="json">{ }</pre>
+      </div>
+      <div class="card" id="inventory">
+        <div class="name">Inventory Service</div>
+        <div>Status: <span class="status">—</span></div>
+        <div class="ts">Last: <span class="last">—</span></div>
+        <pre class="json">{ }</pre>
+      </div>
+    </div>
+
+    <script>
+      const services = [
+        { id: 'order', url: 'http://localhost:4000/health' },
+        { id: 'inventory', url: 'http://localhost:4001/health' }
+      ];
+
+      async function fetchOne(s){
+        const el = document.getElementById(s.id);
+        const statusEl = el.querySelector('.status');
+        const jsonEl = el.querySelector('.json');
+        const lastEl = el.querySelector('.last');
+
+        try{
+          const res = await fetch(s.url, {cache:'no-store'});
+          if(!res.ok) throw new Error(res.status+' '+res.statusText);
+          const data = await res.json();
+          statusEl.textContent = 'OK'; statusEl.className = 'status ok';
+          jsonEl.textContent = JSON.stringify(data,null,2);
+          lastEl.textContent = new Date().toLocaleString();
+        }catch(e){
+          statusEl.textContent = 'DOWN'; statusEl.className = 'status bad';
+          jsonEl.textContent = String(e);
+          lastEl.textContent = new Date().toLocaleString();
+        }
+      }
+
+      function poll(){
+        services.forEach(s=>fetchOne(s));
+      }
+
+      poll();
+      setInterval(poll,3000);
+    </script>
+  </body>
+</html>
