@@ -10,7 +10,7 @@ This project implements a distributed system for managing inventory and orders w
 - **Order Service**: Handles order processing
 
 ## Architecture
-
+ 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
 │  Dashboard  │────▶│ Inventory  │     │   Order    │
